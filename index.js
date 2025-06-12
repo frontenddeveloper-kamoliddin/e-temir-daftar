@@ -57,6 +57,21 @@ registerForm.onsubmit = (e) => {
     .catch(err => showError(err.message));
 };
 
-function showError(msg) {
-  errorEl.innerText = msg;
+function showError(error) {
+  let msg = error.message;
+  if (error.code === "auth/email-already-in-use") {
+    msg = "Bu email bilan foydalanuvchi allaqachon ro‘yxatdan o‘tgan.";
+  } else if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+    msg = "Email yoki parol noto‘g‘ri.";
+  } else if (error.code === "auth/user-not-found") {
+    msg = "Bunday foydalanuvchi topilmadi.";
+  }
+  document.getElementById("error").innerText = msg;
 }
+
+// Ro'yxatdan o'tish va kirish funksiyalaringizda:
+// try {
+//   ...firebase auth code...
+// } catch (error) {
+//   showError(error);
+// }

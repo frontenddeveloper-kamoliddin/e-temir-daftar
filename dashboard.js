@@ -63,16 +63,23 @@ debtorForm.onsubmit = async (e) => {
   const note = document.getElementById("debtorNote").value.trim();
   if (!name || !product || !count || !price) return;
 
-  // Ism unikal bo‘lishi uchun tekshiruv
+  const user = auth.currentUser;
+  if (!user) return;
+
+  // Faqat shu foydalanuvchining qarzdorlarini tekshirish
   const snapshot = await getDocs(collection(db, "debtors"));
-  const exists = snapshot.docs.some(doc => doc.data().name.toLowerCase() === name.toLowerCase());
+  const exists = snapshot.docs.some(doc => {
+    const data = doc.data();
+    return data.userId === user.uid && data.name.toLowerCase() === name.toLowerCase();
+  });
   if (exists) {
-    alert("Bu ismli qarzdor allaqon mavjud!");
+    alert("Bu ismli qarzdor allaqachon mavjud!");
     return;
   }
 
   await addDoc(collection(db, "debtors"), {
     name, product, count, price, note,
+    userId: user.uid,
     history: [{
       type: "add",
       amount: count * price,
@@ -92,13 +99,18 @@ document.getElementById("searchInput").oninput = loadDebtors;
 
 // Qarzdorlar ro'yxatini yuklash va ko'rsatish
 async function loadDebtors() {
+  const user = auth.currentUser;
+  if (!user) return;
   const search = document.getElementById("searchInput").value.toLowerCase();
   const snapshot = await getDocs(collection(db, "debtors"));
   let debtors = [];
   snapshot.forEach(doc => {
     let data = doc.data();
     data.id = doc.id;
-    debtors.push(data);
+    // Faqat o‘zining qarzdorlarini olish
+    if (data.userId === user.uid) {
+      debtors.push(data);
+    }
   });
   if (search) {
     debtors = debtors.filter(d => d.name.toLowerCase().includes(search));
